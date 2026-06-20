@@ -187,16 +187,3 @@ WHERE id = $1;
 
 ---
 
-## Melhorias Futuras
-
-* Envio em massa para todos os clientes
-* Agendamento de mensagens
-* Templates personalizados
-* Logs de envio
-* Histórico de mensagens
-* Integração com filas (RabbitMQ ou Redis)
-* Autenticação JWT
-* Rate Limit para proteção da API
-
-```
-```
