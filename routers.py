@@ -1,19 +1,16 @@
 import os 
+import psycopg
 import requests
 
 from fastapi import APIRouter, HTTPException
 from dotenv import load_dotenv
-from supabase import create_client
 
 #carrega variaveis de ambient do .env(.exemolo.env use de base para criar o seu .env)
 load_dotenv()
 
 router = APIRouter()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 ZAPI_INSTANCE_ID = os.getenv("ZAPI_INSTANCE_ID")
 ZAPI_TOKEN = os.getenv("ZAPI_TOKEN")
@@ -23,15 +20,17 @@ ZAPI_CLIENT_TOKEN = os.getenv("ZAPI_CLIENT_TOKEN")
 @router.post("/enviar/{cliente_id}")
 def enviar_menssagem(cliente_id: int):
     try:
+        with psycopg.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
 
-        resultado = (
-            supabase
-            .table("clientes")
-            .select("nome,telefone")
-            .eq("id", cliente_id)
-        )
+                cur.execute(
+                    """
+                    SELECT nome, telefone FROM clientes WHERE id = %s
+                    """,
+                    (cliente_id,)
+                )
 
-        cliente = resultado.data
+        cliente = cur.fetchone()
 
         if not cliente:
             raise HTTPException(
@@ -39,8 +38,7 @@ def enviar_menssagem(cliente_id: int):
                 detail="Cliente não encontrado"
             )
         
-        nome = cliente["nome"]
-        telefone = cliente["telefone"]
+        nome, telefone = cliente
 
         menssagem = f"Ola, {nome}! tudo bem com você?"
 
@@ -59,15 +57,20 @@ def enviar_menssagem(cliente_id: int):
         respostas = requests.post(
             url,
             json=payload,
-            headers=headers
+            headers=headers,
+            timeout=10
         )
 
         return {
-            "sucesso": True,
+            "sucess": True,
             "cliente": nome,
             "telefone": telefone,
-            "zapi": respostas.json()
+            "zapi_response": respostas.json()
         }
+    
+    except HTTPException:
+        raise
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
