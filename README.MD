@@ -314,3 +314,7 @@ SELECT nome, telefone
 FROM clientes
 WHERE id = $1;
 ```
+Aqui estão as imagens da pasta teste:
+
+![Mensagem](teste/menssagem.png)
+![Postman](teste/postman.png)
